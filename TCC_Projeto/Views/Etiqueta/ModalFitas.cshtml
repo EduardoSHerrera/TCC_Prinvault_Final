@@ -1,0 +1,93 @@
+﻿@{
+    Layout = null;
+
+}
+<form method="post" action="/Etiqueta/AdicionarNovaFita">
+    <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel">Fitas</h5>
+
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" id="fechar_modal">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div>
+            <label class="form-label" for="id_fita">Fitas</label>
+            <select name="fita" id="id_fita" class="form-control">
+                <option value="" selected>------------</option>
+            </select>
+        </div>
+        <br />
+
+        <div hidden>
+            <input type="type" name="IdFita" id="fitaId" value="" />
+        </div>
+
+        <div hidden>
+            <input type="type" name="id" value="@ViewBag.PDFId" />
+        </div>
+
+        <div class="row">
+            <div class="col-6">
+                <label class="form-label">Quantidade</label>
+                <input type="number" name="quantidade" value="1" class="form-control" />
+            </div>
+
+            <div class="col-6">
+                <label class="form-label">Largura</label>
+                <select name="largura" class="form-control">
+                    <option value="" selected>------------</option>
+                    <option value="25">25mm</option>
+                    <option value="40">40mm</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <hr />
+
+    <div id="container_imagem">Selecione uma fita para visualizar a imagem</div>
+    <br>
+    <div class="modal-footer d-flex justify-content-end">
+        <button type="submit" class="btn btn-success">Adicionar</button>
+    </div>
+</form>
+
+<script>
+
+    $("#fechar_modal").click(() => {
+        $("#modalMix").modal('hide')
+    })
+
+    $.ajax({
+        url: '/etiqueta/obtertodasetiquetas',
+        type: 'GET',
+        dataType: 'json',
+        success: function (data) {
+            imagens = data; // Atribui a lista de dados ao array de imagens
+            data.forEach((item) => {
+                $("#id_fita").append(`<option value="${item.id}">${item.nome}</option>`);
+            });
+        },
+        error: function () {
+            console.error('Erro ao carregar as etiquetas.');
+        }
+    });
+
+    $("#id_fita").change(() => {
+        var id_fita = $("#id_fita").val()
+        $("#fitaId").val(id_fita)
+        carregarImagem(id_fita)
+    })
+
+    function carregarImagem(id_fita) {
+        $("#container_imagem").empty();
+
+        const item = imagens.find((i) => i.id === Number(id_fita));
+
+        if (item && item.imagem) {
+            $("#container_imagem").append(`<img src="data:image/jpeg;base64,${item.imagem}" class="card-img-top" alt="${item.nome}" style="height: 100px; object-fit: cover;">`);
+        } else {
+            $("#container_imagem").append('Selecione uma fita para visualizar a imagem');
+        }
+    }
+</script>

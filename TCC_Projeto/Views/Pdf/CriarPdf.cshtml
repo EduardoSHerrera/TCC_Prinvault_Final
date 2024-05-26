@@ -1,0 +1,31 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        img {
+            max-height: 1000px;
+            height: 100vh;
+            width: 100px;
+            margin-right: 5px;
+            overflow: hidden;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    @foreach (var item in Model)
+    {
+        <img src="data:image/jpeg;base64,@item.Base64Image" alt="Imagem da Fita">
+    }
+</body>
+</html>
+
+
