@@ -48,9 +48,10 @@ namespace TCC_Projeto.Models.Etiqueta
         public string? Quantidade { get; set; }
     }
 
-    public class CSV
+    public class CsvRecord
     {
-        [Required(ErrorMessage = "O número do arquivo é obrigatório")]
-        public IFormFile? Csv { get; set; } 
+        public string? Referencia { get; set; }
+        public int Quantidade { get; set; }
+        public int Largura { get; set; }
     }
 }

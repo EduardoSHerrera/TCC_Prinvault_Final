@@ -267,26 +267,65 @@ namespace TCC_Projeto.Controllers
         [HttpPost]
         public async Task<IActionResult> SalvarFitasCsv(IFormFile file)
         {
-            using var stream = new StreamReader(file.OpenReadStream());
-            var csvHeader = await stream.ReadToEndAsync();
-            if (csvHeader != null)
+            if (file == null || file.Length == 0)
             {
-                var headers = csvHeader.Split(',').Take(3).ToArray();
-                if (headers.Length == 3)
-                {
-                    var referencia = headers[0];
-                    var quantidade = headers[1];
-                    var largura = headers[2];
-
-                    // Processar os valores conforme necessário
-                    return Json(new { referencia, quantidade, largura });
-                }
-                else
-                {
-                    return Json("O CSV deve conter pelo menos três cabeçalhos: Referência, Quantidade e Largura.");
-                }
+                return BadRequest("Nenhum arquivo foi enviado.");
             }
-            return Json("Arquivo CSV inválido.");
+
+            using var stream = new StreamReader(file.OpenReadStream());
+            var csvConfiguration = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                Delimiter = ";",
+                HasHeaderRecord = true,
+                IgnoreBlankLines = true
+            };
+
+            using var csvReader = new CsvReader(stream, csvConfiguration);
+
+            // Ler e validar os cabeçalhos
+            csvReader.Read();
+            csvReader.ReadHeader();
+            var headers = csvReader.Context.Reader.HeaderRecord;
+            if (headers == null || headers.Length < 3 ||
+                headers[0].ToLower() != "referencia" ||
+                headers[1].ToLower() != "quantidade" ||
+                headers[2].ToLower() != "largura")
+            {
+                return BadRequest("O arquivo CSV deve conter os cabeçalhos: Referência, Quantidade e Largura.");
+            }
+            var fitasParaAdicionar = new List<PDFEtiquetas>();
+            while (csvReader.Read())
+            {
+                var referencia = csvReader.GetField<string>("referencia");
+                if (string.IsNullOrWhiteSpace(referencia))
+                {
+                    return BadRequest("O arquivo CSV contém registros inválidos na coluna 'referencia'.");
+                }
+
+                if (!csvReader.TryGetField<int>("quantidade", out var quantidade) || quantidade <= 0)
+                {
+                    return BadRequest("O arquivo CSV contém registros inválidos na coluna 'quantidade'.");
+                }
+
+                if (!csvReader.TryGetField<int>("largura", out var largura) || largura <= 0)
+                {
+                    return BadRequest("O arquivo CSV contém registros inválidos na coluna 'largura'.");
+                }
+
+                var fita = new PDFEtiquetas
+                {
+                    NFITA = referencia,
+                    Quantidade = "" + quantidade + "",
+                    Largura = "" + largura + ""
+                };
+
+                fitasParaAdicionar.Add(fita);
+            }
+
+            _context.PDFEtiquetas.AddRange(fitasParaAdicionar);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("CriarImpressaoDetalhes", "Etiqueta", new { id = fitasParaAdicionar.FirstOrDefault()?.NPDF });
         }
     }
 }
