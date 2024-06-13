@@ -79,40 +79,32 @@
 
 <script>
     $(document).ready(function () {
-        // Inicializar DataTable
         carregarEtiquetas();
     });
 
-    $('#btnSalvar').click(function (event) {
-        event.preventDefault(); // Evitar o comportamento padrão do formulário
-
-        var formData = new FormData($('#etiquetaForm')[0]);
+    $('#etiquetaForm').submit(function (event) {
+        event.preventDefault();
+        var formData = new FormData(this);
 
         $.ajax({
             url: '@Url.Action("EnviarEtiqueta", "Etiqueta")',
             type: 'POST',
             data: formData,
+            processData: false,
+            contentType: false,
             success: function (response) {
-                // Remover a mensagem existente, se houver
                 carregarEtiquetas();
                 $('#mensagemSucesso').remove();
                 $('#etiquetaForm')[0].reset();
 
-
-                // Adicionar a mensagem de sucesso
                 var mensagem = '<div class="alert alert-success alert-dismissible fade show" style="position:absolute;width:100vw;" role="alert" id="mensagemSucesso">' +
                     'Fita adicionada com sucesso' +
                     '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
                     '</div>';
-
-                // Adicionar a mensagem ao corpo do documento
                 $('body').append(mensagem);
-
-                // Remover a mensagem após 5 segundos
                 setTimeout(function () {
                     $('#mensagemSucesso').remove();
                 }, 3000);
-                carregarEtiquetas()
             },
             error: function () {
                 alert('Erro ao enviar os dados.');
@@ -122,13 +114,9 @@
 
     $('#tabelaEtiquetasBody').on('click', '.excluir-etiqueta', function () {
         var etiquetaId = $(this).data('id');
-
-        // Abrir o modal de confirmação
         $('#confirmarExclusaoModal').modal('show');
 
-        // Configurar a ação de exclusão no modal de confirmação
         $('#confirmarExclusao').click(function () {
-            // Enviar solicitação AJAX para excluir a etiqueta
             $.ajax({
                 url: '@Url.Action("ExcluirEtiqueta", "Etiqueta")',
                 type: 'POST',
@@ -137,31 +125,25 @@
                     if (response.success) {
                         $('#confirmarExclusaoModal').modal('hide');
                         $('#tabelaEtiquetasBody').empty();
-                        location.reload()
+                        location.reload();
                     }
-
                 },
                 error: function () {
                     alert('Erro ao excluir a etiqueta.');
                 }
             });
         });
-
     });
 
     function carregarEtiquetas() {
-        console.log('oi')
         $.ajax({
             url: "/Etiqueta/ObterTodasEtiquetas/",
             type: 'GET',
             success: function (data) {
-                console.log(data);
-                // Limpar conteúdo existente na tabela
                 if ($.fn.DataTable.isDataTable('#etiquetasTable')) {
                     $('#etiquetasTable').DataTable().destroy();
                     $('#tabelaEtiquetasBody').empty();
                 }
-                // Preencher a tabela com os dados retornados
                 $.each(data, function (index, etiqueta) {
                     var imagemHTML = '<img src="data:image/jpeg;base64,' + etiqueta.imagem + '" width="100;" style="height: 20px;object-fit: cover;" />';
                     var linha = '<tr>' +

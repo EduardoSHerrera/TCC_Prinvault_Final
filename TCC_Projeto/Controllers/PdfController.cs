@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AngleSharp.Text;
+using Microsoft.AspNetCore.Mvc;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 using System.Data.Entity;
@@ -39,26 +40,35 @@ namespace TCC_Projeto.Controllers
                              .Distinct() // Garantir valores únicos
                              .ToList();
 
-            // Verificar se a lista está vazia
-            if (listaNFITA.Count == 0)
+            var etiquetas = await _context.Etiquetas
+                             .Where(e => listaNFITA.Contains(e.Id.ToString())) // Busca onde o ID corresponde
+                             .ToListAsync();
+
+            var TodasFitasQuantidade = new List<object>();
+
+            foreach(var obj_etiqueta in pdf_etiquetas)
             {
-                return NotFound("Nenhum valor de NFITA encontrado.");
+                if(obj_etiqueta != null)
+                {
+                    var quantidade_etiqueta = int.Parse(obj_etiqueta.Quantidade);
+                    var etiqueta = etiquetas.FirstOrDefault(e => e.Id.ToString() == obj_etiqueta.NFITA);
+
+                    if (etiqueta != null)
+                    {
+                        for (int i = 0; i < quantidade_etiqueta; i++)
+                        {
+                            TodasFitasQuantidade.Add(new
+                            {
+                                Base64Image = etiqueta.Imagem != null ? Convert.ToBase64String(etiqueta.Imagem) : string.Empty,
+                                Descricao = etiqueta.Descricao // Outros dados para usar no HTML
+                            });
+                        }
+                    }
+                }
             }
 
-            // Buscar todas as etiquetas associadas aos valores de NFITA
-            var etiquetas = await _context.Etiquetas
-                                         .Where(e => listaNFITA.Contains(e.Id.ToString())) // Busca onde o ID corresponde
-                                         .ToListAsync();
-
-            // Converter as imagens para Base64 e criar o modelo para a view
-            var etiquetasComImagemBase64 = etiquetas.Select(e => new
-            {
-                Base64Image = e.Imagem != null ? Convert.ToBase64String(e.Imagem) : string.Empty,
-                Descricao = e.Descricao // Outros dados para usar no HTML
-            }).ToList();
-
             // Retorna a view para criar o PDF, passando a lista de imagens
-            return new ViewAsPdf("CriarPdf", etiquetasComImagemBase64)
+            return new ViewAsPdf("CriarPdf", TodasFitasQuantidade)
             {
             CustomSwitches = "--page-width 600mm --page-height 213mm", // Define um tamanho de papel de 610 mm por 840 mm
                 PageOrientation = Orientation.Portrait, // Orientação retrato

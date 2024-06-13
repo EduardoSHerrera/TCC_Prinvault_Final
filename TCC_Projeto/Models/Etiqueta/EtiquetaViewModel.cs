@@ -54,4 +54,10 @@ namespace TCC_Projeto.Models.Etiqueta
         public int Quantidade { get; set; }
         public int Largura { get; set; }
     }
+
+    public class CsvRequest
+    {
+        public int Id { get; set; }
+        public IFormFile? File { get; set; }
+    }
 }

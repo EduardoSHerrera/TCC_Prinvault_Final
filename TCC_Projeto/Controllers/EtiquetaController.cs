@@ -265,14 +265,14 @@ namespace TCC_Projeto.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> SalvarFitasCsv(IFormFile file)
+        public async Task<IActionResult> SalvarFitasCsv(CsvRequest request)
         {
-            if (file == null || file.Length == 0)
+            if (request.File == null || request.File.Length == 0)
             {
                 return BadRequest("Nenhum arquivo foi enviado.");
             }
 
-            using var stream = new StreamReader(file.OpenReadStream());
+            using var stream = new StreamReader(request.File.OpenReadStream());
             var csvConfiguration = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 Delimiter = ";",
@@ -312,20 +312,57 @@ namespace TCC_Projeto.Controllers
                     return BadRequest("O arquivo CSV contém registros inválidos na coluna 'largura'.");
                 }
 
-                var fita = new PDFEtiquetas
-                {
-                    NFITA = referencia,
-                    Quantidade = "" + quantidade + "",
-                    Largura = "" + largura + ""
-                };
+                var imagemCsv = _context.Etiquetas.FirstOrDefault(e => e.Nome == referencia);
 
-                fitasParaAdicionar.Add(fita);
+                if(imagemCsv != null)
+                {
+                    var fita = new PDFEtiquetas
+                    {
+                        NPDF = request.Id.ToString(),
+                        Descricao = referencia,
+                        Quantidade = quantidade.ToString(),
+                        Largura = largura.ToString(),
+                        NFITA = imagemCsv.Id.ToString()
+                    };
+
+                    fitasParaAdicionar.Add(fita);
+                }
             }
 
             _context.PDFEtiquetas.AddRange(fitasParaAdicionar);
             await _context.SaveChangesAsync();
 
             return RedirectToAction("CriarImpressaoDetalhes", "Etiqueta", new { id = fitasParaAdicionar.FirstOrDefault()?.NPDF });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ExcluirEtiquetaPdf(int id)
+        {
+            try
+            {
+                // Encontrar a etiqueta pelo ID
+                var etiqueta = await _context.PDFEtiquetas.FindAsync(id);
+
+                // Verificar se a etiqueta foi encontrada
+                if (etiqueta != null)
+                {
+                    // Remover a etiqueta do contexto
+                    _context.PDFEtiquetas.Remove(etiqueta);
+
+                    // Salvar as alterações no banco de dados
+                    await _context.SaveChangesAsync();
+
+                    return Json(new { success = true, message = "Etiqueta excluída com sucesso!" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Etiqueta não encontrada." });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
     }
 }

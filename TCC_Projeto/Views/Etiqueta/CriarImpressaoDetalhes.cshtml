@@ -30,7 +30,6 @@
             </div>
         </div>
     </div>
-
     <!-- Fim pesquisa de etiqueta -->
 </div>
 <br />
@@ -42,11 +41,10 @@
     </div>
     <div>
         <button type="button" class="btn btn-primary" onclick="abrirmodalCsv()">
-            Importar arquivo CSV
+            Importar arquivo <strong>CSV</strong>
         </button>
     </div>
 </div>
-
 
 <table class="table table-sm table-dark mt-3" id="tabelaEtiquetas">
     <thead>
@@ -55,7 +53,6 @@
             <th scope="col-1">Descrição</th>
             <th scope="col">Quantidade</th>
             <th scope="col-1">Largura</th>
-            <th scope="col-1">Editar</th>
             <th scope="col-1">Excluir</th>
         </tr>
     </thead>
@@ -63,12 +60,6 @@
     </tbody>
 </table>
 
-<!--
-<div class="container mt-5 text-dark">
-    <div class="row" id="cards_fita">
-    </div>
-</div>
--->
 <!-- Modal Mix -->
 <div class="modal fade" id="modalMix" tabindex="-1" role="dialog" aria-labelledby="modalMixLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
@@ -110,18 +101,6 @@
 <script>
     let imagens = Array()
 
-    // $("#btnPesquisar").click(function () {
-    //     var textoPesquisa = $("#pesquisarEtiqueta").val().toLowerCase();
-    //     $(".card").each(function () {
-    //         var textoCard = $(this).find(".card-title").text().toLowerCase();
-    //         if (textoCard.includes(textoPesquisa)) {
-    //             $(this).parent().show();
-    //         } else {
-    //             $(this).parent().hide();
-    //         }
-    //     });
-    // });
-
     $('#enviar_formulario').click(function () {
         // Crie um novo objeto FormData para armazenar os dados do formulário
         var formData = new FormData();
@@ -136,16 +115,6 @@
             url: '/Etiqueta/CriarPDF',
             type: 'POST',
             data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-                // Trate a resposta aqui, se necessário
-                console.log(response);
-            },
-            error: function () {
-                // Trate os erros de solicitação aqui, se necessário
-                alert('Erro ao enviar o formulário.');
-            }
         });
     });
 
@@ -167,39 +136,38 @@
             url: `/Etiqueta/ObterTodasEtiquetasPDF/${@ViewBag.PDFId}`,
             type: 'GET',
             success: function (data) {
-                data.map((item) => {
-                    $("#tabelaEtiquetas > tbody").append(`
-                        <tr>
-                            <td>${item.id}</td>
-                            <td>${item.descricao}</td>
-                            <td>${item.quantidade}</td>
-                            <td>${item.largura}</td>
-                            <td style="width:5px">
-                                <button class="btn btn-danger edit-button" data-id="${item.id}"><i class="bi bi-pencil-fill"></i></button>
-                            </td>
-                            <td style="width:5px">
-                                <button class="btn btn-warning text-light delete-button" data-id="${item.id}"><i class="bi bi-trash-fill"></i></button>
-                            </td>
-                        </tr>
-                    `);
-                });
-
-                // Adiciona eventos para os botões
-                $(".edit-button").click(function (event) {
-                    event.preventDefault();
-                    let id = $(this).data("id");
-                    // Lógica para editar
-                });
-
-                $(".delete-button").click(function (event) {
-                    event.preventDefault();
-                    let id = $(this).data("id");
-                    // Lógica para deletar ou redirecionar
-                    window.location.href = `/Etiqueta/CriarImpressaoDetalhes/${id}`;
-                });
+                console.log(data)
+                if (data){
+                    data.map((item) => {
+                        $("#tabelaEtiquetas > tbody").append(`
+                            <tr>
+                                <td>${item.id}</td>
+                                <td>${item.descricao}</td>
+                                <td>${item.quantidade}</td>
+                                <td>${item.largura}</td>
+                                <td style="width:5px">
+                                        <button class="btn btn-danger text-light" onClick="excluirEtiqueta(${item.id})"><i class="bi bi-trash-fill"></i></button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                }
             },
         });
     });
+
+    function excluirEtiqueta(id){
+        $.ajax({
+            url: `/Etiqueta/ExcluirEtiquetaPdf/${id}`,
+            type: 'POST',
+            success: function (data) {
+                window.location.href = '/Etiqueta/CriarImpressaoDetalhes/' + '@ViewBag.PDFId';
+            },
+            error: function (xhr, status, error) {
+                alert('Erro ao deletar: ' + xhr.responseText);
+            }
+        })
+    }
 
     function abrirmodalCsv() {
         $("#modalCsv").modal("show")
@@ -210,29 +178,32 @@
     function adicionarCsv() {
         var csvFileInput = $("#id_csv_modal")[0];
         var csvFile = csvFileInput.files[0];
-
         if ($("#id_csv_modal").val() == "") {
             $("#erro_arquivo").attr("hidden", true)
             $("#erro_vazio").removeAttr("hidden")
         }
         else if (!isCsvFile($("#id_csv_modal").val())) {
+            console.log("primeira condicao")
             $("#erro_vazio").attr("hidden", true)
             $("#erro_arquivo").removeAttr("hidden")
         }
         else {
+            console.log(@ViewBag.PDFId)
             var formData = new FormData();
             formData.append('file', csvFile);
+            formData.append('id', '@ViewBag.PDFId');
             $.ajax({
                 url: '/Etiqueta/SalvarFitasCsv/',
                 type: 'POST',
                 data: formData,
-                contentType: false,
                 processData: false,
-                success: function (data) {
-                    console.log(data);
+                contentType: false,
+                success: function (response) {
+                    alert('Arquivo enviado com sucesso.');
+                    window.location.href = '/Etiqueta/CriarImpressaoDetalhes/' + '@ViewBag.PDFId';
                 },
-                error: function (error) {
-                    console.log('aqui', error.responseText);
+                error: function (xhr, status, error) {
+                    alert('Erro ao enviar o arquivo: ' + xhr.responseText);
                 }
             })
         }
