@@ -169,12 +169,26 @@ namespace TCC_Projeto.Controllers
         }
 
         [HttpGet]
-        public IActionResult ObterTodasEtiquetas()
+        public async Task<IActionResult> ObterTodasEtiquetas()
         {
             try
             {
-                // Consultar todas as etiquetas do banco de dados
-                var etiquetas = _context.Etiquetas.ToList();
+                // Consultar todas as etiquetas do banco de dados de forma assíncrona e sem rastreamento
+                var etiquetas = await _context.Etiquetas
+                    .AsNoTracking()  // Desativa o rastreamento de mudanças para melhorar o desempenho
+                    .Select(e => new
+                    {
+                        e.Id,
+                        e.Nome,
+                        e.Descricao,
+                        e.Imagem
+                    })
+                    .ToListAsync();
+
+                if (etiquetas == null || !etiquetas.Any())
+                {
+                    return Json(new { message = "Nenhuma etiqueta encontrada" });
+                }
 
                 // Mapear os dados das etiquetas para um novo objeto com a imagem convertida para base64
                 var etiquetasComImagemBase64 = etiquetas.Select(e => new
@@ -186,11 +200,15 @@ namespace TCC_Projeto.Controllers
                 }).ToList();
 
                 return Json(etiquetasComImagemBase64);
-            } catch
+            }
+            catch (Exception ex)
             {
-                return Json("");
+                // Retornar uma mensagem de erro ou logar a exceção conforme necessário
+                return StatusCode(500, new { message = "Erro ao obter etiquetas", details = ex.Message });
             }
         }
+
+
 
         [HttpGet]
         public IActionResult ObterTodosPDF()

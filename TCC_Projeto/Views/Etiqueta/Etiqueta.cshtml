@@ -40,7 +40,18 @@
         </div>
     </div>
 
-    <div class="card">
+    <div class="div_loader">
+        <div class="loader">
+            <div class="face">
+                <div class="circle"></div>
+            </div>
+            <div class="face">
+                <div class="circle"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="esconderTabelaFitas" hidden>
         <div class="card-body">
             <h5 class="card-title text-dark">Fitas</h5>
             <table class="table table-striped" id="etiquetasTable" width="100%">
@@ -85,7 +96,6 @@
     $('#etiquetaForm').submit(function (event) {
         event.preventDefault();
         var formData = new FormData(this);
-
         $.ajax({
             url: '@Url.Action("EnviarEtiqueta", "Etiqueta")',
             type: 'POST',
@@ -159,6 +169,9 @@
                         url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Portuguese-Brasil.json'
                     },
                 });
+
+                $("#esconderTabelaFitas").removeAttr('hidden')
+                $(".div_loader").attr('hidden', true)
             },
             error: function () {
                 alert('Erro ao carregar as etiquetas.');

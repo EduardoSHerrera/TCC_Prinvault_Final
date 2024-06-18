@@ -1,4 +1,15 @@
-﻿<div class="container">
+﻿<div class="div_loader" hidden style="margin-top:25%">
+    <div class="loader">
+        <div class="face">
+            <div class="circle"></div>
+        </div>
+        <div class="face">
+            <div class="circle"></div>
+        </div>
+    </div>
+</div>
+
+<div class="container container_impressao">
     <h2 class="text-dark">Criar Novo PDF</h2>
 
     <!-- Inputs -->
@@ -12,7 +23,7 @@
             <input type="date" class="form-control" id="id_data" placeholder="Insira uma data" value="@ViewBag.Data" name="Data">
         </div>
         <div class="col-md-2" style="margin-top:23px">
-            <a class="btn btn-success" role="button" aria-pressed="true" href="/Pdf/CriarPdf/@ViewBag.PDFId" target="_blank">Enviar</a>
+            <a class="btn btn-success" role="button" aria-pressed="true" href="/Pdf/CriarPdf/@ViewBag.PDFId" target="_blank">Gerar PDF</a>
         </div>
     </div>
     <hr>
@@ -33,20 +44,21 @@
     <!-- Fim pesquisa de etiqueta -->
 </div>
 <br />
-<div class="d-flex justify-content-start">
+
+<div class="d-flex justify-content-start container_impressao">
     <div style="margin-right: 5px;">
-        <button type="button" class="btn btn-success mr-2" onclick="abrirmodal()">
+        <button type="button" class="btn btn-success mr-2 container_impressao" onclick="abrirmodal()">
             Adicionar Nova Fita
         </button>
     </div>
     <div>
-        <button type="button" class="btn btn-primary" onclick="abrirmodalCsv()">
+        <button type="button" class="btn btn-primary container_impressao" onclick="abrirmodalCsv()">
             Importar arquivo <strong>CSV</strong>
         </button>
     </div>
 </div>
 
-<table class="table table-sm table-dark mt-3" id="tabelaEtiquetas">
+<table class="table table-sm table-dark mt-3 container_impressao" id="tabelaEtiquetas">
     <thead>
         <tr>
             <th scope="col-1">ID</th>
@@ -183,12 +195,13 @@
             $("#erro_vazio").removeAttr("hidden")
         }
         else if (!isCsvFile($("#id_csv_modal").val())) {
-            console.log("primeira condicao")
             $("#erro_vazio").attr("hidden", true)
             $("#erro_arquivo").removeAttr("hidden")
         }
         else {
-            console.log(@ViewBag.PDFId)
+            $("#modalCsv").modal("hide")
+            $(".div_loader").removeAttr('hidden')
+            $(".container_impressao").attr('hidden', true)
             var formData = new FormData();
             formData.append('file', csvFile);
             formData.append('id', '@ViewBag.PDFId');
@@ -199,7 +212,6 @@
                 processData: false,
                 contentType: false,
                 success: function (response) {
-                    alert('Arquivo enviado com sucesso.');
                     window.location.href = '/Etiqueta/CriarImpressaoDetalhes/' + '@ViewBag.PDFId';
                 },
                 error: function (xhr, status, error) {
